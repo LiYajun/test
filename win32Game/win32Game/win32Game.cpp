@@ -5,17 +5,18 @@
 #include "win32Game.h"
 
 #define MAX_LOADSTRING 100
-
+#define KEYDONW(vk_code) ((GetAsyncKeyState(vk_code) & 0x8000) ? 1:0)
+#define KEYUP(vk_code)  ((GetAsyncKeyState(vk_code) & 0x8000)? 0:1)
 // Global Variables:
 HINSTANCE hInst;								// current instance
 TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
-
+TCHAR buffer[MAX_LOADSTRING];
 // Forward declarations of functions included in this code module:
  
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 //”Œœ∑—≠ª∑
-void Game_Main(void);
+void Game_Main(HWND hwnd);
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -80,7 +81,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		Game_Main();
+		 
+		Game_Main(hwnd);
 	}
  
 		//if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -95,9 +97,12 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 //
 //  PURPOSE: Game main loop
  
-void Game_Main()
+void Game_Main(HWND hwnd)
 {
-
+	HDC hdc = GetDC(hwnd);
+	wsprintf(buffer, _T("up arrow = %d"), KEYDONW(VK_UP) );
+	TextOut(hdc, 0,0, buffer, lstrlen(buffer));
+	ReleaseDC(hwnd, hdc);
 }
 
  
@@ -124,13 +129,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}break;
 		case WM_PAINT:
 		{
+		 	COLORREF old_fcolor, old_bcolor;
+		 	int old_tmode;
+
+		 	InvalidateRect(hWnd, NULL, FALSE);
 			hdc = BeginPaint(hWnd, &ps);
+ 
+			old_fcolor = SetTextColor(hdc, RGB(0,255,0));
+			old_bcolor = SetBkColor(hdc, RGB(0,0,0));
+			old_tmode  = SetBkMode(hdc, OPAQUE);
+			TextOut(hdc, 20,30,_T("Hello"), strlen("Hello"));
+
+			SetTextColor(hdc, old_fcolor);
+			SetBkColor(hdc, old_bcolor);
+			SetBkMode(hdc, old_tmode); 
 					 // TODO: Add any drawing code here...
 			EndPaint(hWnd, &ps);
 		}break;
 		case WM_DESTROY:
 		{
 			PostQuitMessage(0);
+		}break;
+		case WM_CLOSE:
+		{
+			DefWindowProc(hWnd, message, wParam, lParam);
 		}break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
